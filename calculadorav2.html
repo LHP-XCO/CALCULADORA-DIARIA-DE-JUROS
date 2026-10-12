@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Microcrédito</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --increase: #fb7185;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: 580px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+    p.subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus {
+      border-color: var(--primary);
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      color: #0f172a;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 6px;
+    }
+    .btn:hover {
+      background: var(--primary-hover);
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .stat-card {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+    }
+    .stat-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .stat-card.highlight {
+      grid-column: span 2;
+      border-color: var(--primary);
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .stat-card.highlight .stat-value {
+      color: var(--primary);
+      font-size: 1.6rem;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    thead {
+      background: #0f172a;
+    }
+    th, td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    td.text-right, th.text-right {
+      text-align: right;
+    }
+    .badge-increase {
+      color: #fb7185;
+      font-weight: 600;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="card">
+      <h1>Simulador Financeiro</h1>
+      <p class="subtitle">Taxa fixa de 40% no vencimento + 10% diários no atraso</p>
+
+      <div class="form-group">
+        <label for="valor">Valor Solicitado (R$)</label>
+        <input type="number" id="valor" placeholder="Ex: 1000" value="1000">
+      </div>
+
+      <div class="form-group">
+        <label for="dias">Dias de Atraso</label>
+        <input type="number" id="dias" placeholder="0 se estiver no vencimento" value="3">
+      </div>
+
+      <button class="btn" onclick="calcular()">Simular Valores</button>
+    </div>
+
+    <div class="card hidden" id="cardResultados">
+      <h2 style="font-size: 1.1rem; margin-bottom: 14px;">Resumo dos Valores</h2>
+
+      <div class="results-grid">
+        <div class="stat-card">
+          <div class="stat-title">Valor Solicitado</div>
+          <div class="stat-value" id="resSolicitado">R$ 0,00</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Base Vencimento (+40%)</div>
+          <div class="stat-value" id="resBase">R$ 0,00</div>
+        </div>
+        <div class="stat-card highlight">
+          <div class="stat-title">Total Atualizado a Cobrar</div>
+          <div class="stat-value" id="resTotal">R$ 0,00</div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 0.95rem; margin-top: 22px; color: var(--text-muted);">Extrato Detalhado com Aumento Diário</h3>
+      
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Dia</th>
+              <th>Regra</th>
+              <th class="text-right">Aumento no Dia (+R$)</th>
+              <th class="text-right">Saldo Devedor</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaCorpo">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function formatarMoeda(valor) {
+      return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function calcular() {
+      const valor = parseFloat(document.getElementById('valor').value);
+      const dias = parseInt(document.getElementById('dias').value) || 0;
+
+      if (isNaN(valor) || valor <= 0) {
+        alert('Digite um valor válido.');
+        return;
+      }
+
+      const taxaFixa = valor * 0.40;
+      const valorBase = valor + taxaFixa;
+
+      document.getElementById('resSolicitado').innerText = formatarMoeda(valor);
+      document.getElementById('resBase').innerText = formatarMoeda(valorBase);
+
+      const tbody = document.getElementById('tabelaCorpo');
+      tbody.innerHTML = '';
+
+      // Dia 0: Vencimento (+40% fixo)
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>Dia 0</strong></td>
+          <td>Taxa Vencimento (+40%)</td>
+          <td class="text-right badge-increase">+ ${formatarMoeda(taxaFixa)}</td>
+          <td class="text-right"><strong>${formatarMoeda(valorBase)}</strong></td>
+        </tr>
+      `;
+
+      // Dias de Atraso (+10% ao dia sobre o saldo anterior)
+      let saldoAtual = valorBase;
+      for (let i = 1; i <= dias; i++) {
+        const aumentoDoDia = saldoAtual * 0.10;
+        saldoAtual = saldoAtual + aumentoDoDia;
+        
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>Dia ${i}</strong></td>
+            <td>Juros Atraso (+10%)</td>
+            <td class="text-right badge-increase">+ ${formatarMoeda(aumentoDoDia)}</td>
+            <td class="text-right"><strong>${formatarMoeda(saldoAtual)}</strong></td>
+          </tr>
+        `;
+      }
+
+      document.getElementById('resTotal').innerText = formatarMoeda(saldoAtual);
+      document.getElementById('cardResultados').classList.remove('hidden');
+    }
+
+    window.onload = calcular;
+  </script>
+</body>
+</html>
